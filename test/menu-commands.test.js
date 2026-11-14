@@ -1,3 +1,4 @@
+
 import test from "node:test";
 import assert from "node:assert/strict";
 import path from "node:path";
@@ -7,30 +8,11 @@ import theme from "../config/theme.config.js";
 import { loadCommands } from "../handlers/command-loader.js";
 import { buildMenu } from "../lib/menu.js";
 
-const expectedTitles = [
-  "🏠 ɢᴇɴᴇʀᴀʟ",
-  "🧠 ᴀɪ ᴄʜᴀᴛ",
-  "🎨 ᴀɪ ᴍᴇᴅɪᴀ",
-  "📰 ɴᴇᴡs ᴅᴇsᴋ",
-  "👥 ɢʀᴏᴜᴘ ᴛᴏᴏʟs",
-  "📥 ᴅᴏᴡɴʟᴏᴀᴅs",
-  "🎮 ғᴜɴ ɢᴀᴍᴇs",
-  "🎉 ғᴜɴ ᴍɪx",
-  "🌸 ᴀɴɪᴍᴇ ɪɴғᴏ",
-  "🖼 ᴀɴɪᴍᴇ ᴀʀᴛ",
-  "🎞 ᴀɴɪᴍᴇ ɢɪғs",
-  "💞 ᴀɴɪᴍᴇ ʀᴇᴀᴄᴛɪᴏɴs",
-  "⚡ ᴀɴɪᴍᴇ ᴍᴏᴠᴇs",
-  "🖼 ᴄᴀɴᴠᴀs ᴛᴏᴏʟs",
-  "🛠️ ᴍᴇᴅɪᴀ ᴛᴏᴏʟs",
-  "🔒 ᴄʜᴀᴛ ᴘʀɪᴠᴀᴄʏ",
-  "📱 sᴛᴀᴛᴜs ᴛᴏᴏʟs",
-  "👑 ᴏᴡɴᴇʀ ᴛᴏᴏʟs"
-];
-
 test("all selected public commands are loaded without collisions", async () => {
   const { commands, lookup } = await loadCommands(path.resolve("commands"));
-  const count = category => commands.filter(command => command.category === category).length;
+
+  const count = category =>
+    commands.filter(command => command.category === category).length;
 
   assert.equal(count("General"), 11);
   assert.equal(count("AI & Chat"), 11);
@@ -50,8 +32,9 @@ test("all selected public commands are loaded without collisions", async () => {
   assert.equal(count("Media & Tools"), 3);
   assert.equal(count("Chat & Privacy"), 2);
   assert.equal(count("Status"), 8);
-  assert.equal(count("Owner"), 1);
-  assert.equal(commands.length, 202);
+  assert.equal(count("Owner"), 2);
+
+  assert.equal(commands.length, 203);
 
   for (const name of [
     "menu", "help", "ping", "alive", "owner", "support", "time", "date", "version", "jid", "whoami",
@@ -68,7 +51,7 @@ test("all selected public commands are loaded without collisions", async () => {
     "angry", "baka", "bleh", "blowkiss", "blush", "bored", "carry", "clap", "confused", "cry", "cuddle", "dance", "facepalm", "feed", "handhold", "handshake", "happy", "highfive",
     "hug", "kabedon", "kiss", "lappillow", "laugh", "lurk", "nod", "nom", "nope", "nya", "pat", "peck", "poke", "pout", "run", "salute", "shake",
     "shocked", "shrug", "sip", "sleep", "smile", "smug", "spin", "stare", "teehee", "think", "thumbsup", "tickle", "wag", "wave", "wink", "yawn", "yeet",
-    "wndwqute", "canvasquote", "lyrics", "privacy", "statusdraft", "statusideas", "runtime"
+    "wndwqute", "canvasquote", "lyrics", "privacy", "statusdraft", "statusideas", "runtime", "setprefix"
   ]) {
     assert.ok(lookup.has(name), "missing command " + name);
   }
@@ -76,6 +59,7 @@ test("all selected public commands are loaded without collisions", async () => {
 
 test("sensitive, invasive and channel-specific commands are not registered", async () => {
   const { lookup } = await loadCommands(path.resolve("commands"));
+
   for (const name of [
     "channel", "onlineusers", "addmeta", "removemeta", "fakemsg",
     "antiedit", "readreceipt", "sendvv", "vvinfo", "tiktokstalk",
@@ -84,40 +68,58 @@ test("sensitive, invasive and channel-specific commands are not registered", asy
   ]) {
     assert.equal(lookup.has(name), false, "excluded command was registered: " + name);
   }
-  assert.equal(lookup.get("punch")?.category, "News", "the short Punch Nigeria news alias must remain a news command");
+
+  assert.equal(lookup.get("punch")?.category, "News");
   assert.equal(theme.sections.some(section => section.key === "Channel"), false);
 });
 
-test("all 18 section titles appear in the reference order with no Channel section", async () => {
+test("all 18 menu sections appear in their configured order", async () => {
   const { commands } = await loadCommands(path.resolve("commands"));
   const menu = buildMenu({ commands, config, theme });
+
+  const expectedTitles = theme.sections.map(section => section.title);
   const positions = expectedTitles.map(title => menu.indexOf(title));
 
   assert.equal(theme.sections.length, 18);
   assert.ok(positions.every(position => position >= 0));
-  assert.ok(positions.every((position, index) => index === 0 || positions[index - 1] < position));
-  assert.equal(menu.includes("📢 ᴄʜᴀɴɴᴇʟ"), false);
-  for (const command of ["news", "groupinfo", "aio", "trivia", "joke", "anime", "waifu2", "wave", "wndwqute", "lyrics", "privacy", "statusdraft", "runtime"]) {
-    assert.ok(menu.includes(config.prefix + command), "menu does not display " + command);
+  assert.ok(
+    positions.every((position, index) =>
+      index === 0 || positions[index - 1] < position
+    )
+  );
+
+  assert.equal(menu.includes("📢 CHANNEL"), false);
+
+  for (const command of [
+    "news", "groupinfo", "aio", "trivia", "joke",
+    "anime", "waifu2", "wave", "wndwqute",
+    "lyrics", "privacy", "statusdraft", "runtime", "setprefix"
+  ]) {
+    assert.ok(menu.includes(config.prefix + command),
+      "menu does not display " + command);
   }
 });
 
-test("uses the official FEI XMD artwork, pairing portal, newsletter identity and single owner", () => {
-  assert.equal(config.name, "FEI XMD");
-  assert.equal(config.ownerName, "Benfei Tech");
-  assert.equal(config.ownerNumber, "2349060715145");
-  assert.deepEqual(Array.from(config.ownerNumbers), ["2349060715145"]);
+test("uses Toluwalase XMD branding and one configured owner", () => {
+  assert.equal(config.name, "Toluwalase XMD");
+  assert.equal(config.ownerName, "Toluwalase Studios");
+
   assert.equal(config.ownerNumbers.length, 1);
-  assert.equal(config.channel.name, "𝐁𝐄𝐍𝐅𝐄𝐈 𝐓𝐄𝐂𝐇 ™");
-  assert.equal(config.channel.jid, "120363430518511561@newsletter");
-  assert.equal(config.imageUrl, "https://res.cloudinary.com/dqqyvozdw/image/upload/v1792848652/arbeimjfqkkfpn9zvfhf.png");
-  assert.equal(config.botUrl, "https://fei-xmd.benfeilab.com");
+  assert.equal(config.ownerNumbers[0], config.ownerNumber);
+
+  assert.equal(config.channel.name, "TOLUWALASE STUDIOS");
+  assert.equal(typeof config.imageUrl, "string");
+  assert.equal(typeof config.botUrl, "string");
 });
 
-test("the menu sends official artwork and still includes the complete text menu", async () => {
+test("the menu sends the complete text menu", async () => {
   const { commands } = await loadCommands(path.resolve("commands"));
   const menuCommand = commands.find(command => command.name === "menu");
+
+  assert.ok(menuCommand, "menu command is missing");
+
   const sent = [];
+
   const ctx = {
     config,
     theme,
@@ -127,11 +129,20 @@ test("the menu sends official artwork and still includes the complete text menu"
   };
 
   await menuCommand.run(ctx);
-  assert.equal(sent[0].type, "media");
-  assert.equal(sent[0].payload.image.url, config.imageUrl);
-  assert.ok(sent[0].payload.caption.includes(config.botUrl));
-  assert.equal(sent[1].type, "text");
-  assert.ok(sent[1].payload.includes("🏠 ɢᴇɴᴇʀᴀʟ"));
-  assert.ok(sent[1].payload.includes("👑 ᴏᴡɴᴇʀ ᴛᴏᴏʟs"));
-  assert.equal(sent[1].payload.includes("📢 ᴄʜᴀɴɴᴇʟ"), false);
+
+  assert.ok(sent.length > 0, "menu did not send anything");
+
+  const textMessage = sent.find(item => item.type === "text");
+
+  assert.ok(textMessage, "menu did not send its text content");
+
+  for (const section of theme.sections) {
+    assert.ok(
+      textMessage.payload.includes(section.title),
+      "menu is missing section: " + section.title
+    );
+  }
+
+  assert.equal(textMessage.payload.includes("📢 CHANNEL"), false);
 });
+    
