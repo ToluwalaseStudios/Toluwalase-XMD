@@ -117,7 +117,6 @@ test("uses Toluwalase XMD branding and configured owner settings", () => {
   assert.equal(typeof config.imageUrl, "string");
   assert.equal(typeof config.botUrl, "string");
 });
-});
 
 test("the menu sends the complete text menu", async () => {
   const { commands } = await loadCommands(path.resolve("commands"));
