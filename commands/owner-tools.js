@@ -1,21 +1,34 @@
-function duration(seconds) {
-  const total = Math.max(0, Math.floor(Number(seconds) || 0));
-  const days = Math.floor(total / 86400);
-  const hours = Math.floor((total % 86400) / 3600);
-  const minutes = Math.floor((total % 3600) / 60);
-  const rest = total % 60;
-  return (days ? days + "d " : "") + hours + "h " + minutes + "m " + rest + "s";
-}
+import { setBotPrefix } from "../lib/bot-settings.js";
 
 export default {
-  name: "runtime",
+  name: "setprefix",
   category: "Owner",
-  description: "Show a read-only FEI XMD process uptime summary.",
+  description: "Change the bot command prefix.",
   run: async ctx => {
-    await ctx.reply(
-      "⏱️ *FEI XMD RUNTIME*\n" +
-      "Uptime: " + duration(process.uptime()) + "\n" +
-      "WhatsApp connection: " + (ctx.connectionOpen ? "Connected" : "Not connected")
-    );
+    if (!ctx.owner) {
+      return ctx.reply("⛔ Only the bot owner can change the prefix.");
+    }
+
+    const newPrefix = String(ctx.args || "").trim();
+
+    if (!newPrefix) {
+      const current = ctx.config.prefix || "!";
+      return ctx.reply(
+        "Current prefix: " + current +
+        "\nUsage: " + current + "setprefix <new prefix>"
+      );
+    }
+
+    try {
+      const prefix = await setBotPrefix(newPrefix);
+      await ctx.reply(
+        "✅ *PREFIX UPDATED*\n\n" +
+        "New prefix: " + prefix +
+        "\nExample: " + prefix + "menu"
+      );
+    } catch (error) {
+      await ctx.reply("❌ " + error.message);
+    }
   }
 };
+        
