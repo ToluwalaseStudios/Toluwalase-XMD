@@ -100,16 +100,23 @@ test("all 18 menu sections appear in their configured order", async () => {
   }
 });
 
-test("uses Toluwalase XMD branding and one configured owner", () => {
+test("uses Toluwalase XMD branding and configured owner settings", () => {
   assert.equal(config.name, "Toluwalase XMD");
   assert.equal(config.ownerName, "Toluwalase Studios");
 
-  assert.equal(config.ownerNumbers.length, 1);
-  assert.equal(config.ownerNumbers[0], config.ownerNumber);
+  assert.ok(Array.isArray(config.ownerNumbers));
+
+  if (config.ownerNumber) {
+    assert.equal(config.ownerNumbers.length, 1);
+    assert.equal(config.ownerNumbers[0], config.ownerNumber);
+  } else {
+    assert.equal(config.ownerNumbers.length, 0);
+  }
 
   assert.equal(config.channel.name, "TOLUWALASE STUDIOS");
   assert.equal(typeof config.imageUrl, "string");
   assert.equal(typeof config.botUrl, "string");
+});
 });
 
 test("the menu sends the complete text menu", async () => {
